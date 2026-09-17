@@ -1,0 +1,9 @@
+[
+  {
+    "base-image": "nginx",
+    "base-tag": "1.31.5-alpine",
+    "latest": true,
+    "lts": false,
+    "version": "1.31.5"
+  }
+]

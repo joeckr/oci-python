@@ -1,0 +1,51 @@
+template:
+  app: oci-custom
+  image: ghcr.io/joeckr/oci-custom
+  name: oci-custom
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  port: 8080
+  pullPolicy: Always
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL
+  tag: latest
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+pvc:
+  name: template-pvc
+  storageAccessMode: ReadWriteOnce
+  storageSize: 1Gi
+  storageClass: ""
+
+configMap:
+  name: template-config
+  file: template.txt
+
+service:
+  name: template-service
+  port: 8080
+
+ingress:
+  name: template-ingress
+  host: "test.joeckr.dev"  # Put your own domain here
+  route: "false"
+  className: "nginx"
+  path: /
+  pathType: "Prefix"

@@ -1,0 +1,17 @@
+services:
+  template:
+    container_name: template
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ENV=dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - template-data:/app/template-data
+      - ./template.txt:/app/template.txt
+
+volumes:
+  template-data:
+    driver: local

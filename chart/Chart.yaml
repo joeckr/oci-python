@@ -1,0 +1,6 @@
+apiVersion: v2
+name: oci-custom
+description: A Helm chart for joeckr oci custom
+type: application
+version: 0.1.1
+appVersion: "0.1.1"

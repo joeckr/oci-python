@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.template.name}}
+  labels:
+    app: {{ .Values.template.app }}
+spec:
+  replicas: {{ .Values.template.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.template.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.template.app }}
+    spec:
+      {{- with .Values.template.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.template.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      volumes:
+        - name: {{ .Values.pvc.name }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.name }}
+        - name: {{ .Values.configMap.name }}
+          configMap:
+            name: {{ .Values.configMap.name }}
+      containers:
+        - name: {{ .Values.template.name }}
+          image: "{{ .Values.template.image }}:{{ .Values.template.tag }}"
+          imagePullPolicy: {{ .Values.template.pullPolicy }}
+          {{- with .Values.template.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.template.port }}
+              name: {{ .Values.template.name }}
+          env:
+            - name: ENV
+              value: {{ .Values.template.env | quote }}
+          volumeMounts:
+            - name: {{ .Values.pvc.name }}
+              mountPath: /tmp/data
+            - name: {{ .Values.configMap.name }}
+              mountPath: /app/{{ .Values.configMap.file }}
+              subPath: {{ .Values.configMap.file }}
+          {{- with .Values.template.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
