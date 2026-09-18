@@ -1,26 +1,34 @@
-ARG IMAGE=nginx
-ARG TAG=1.31.5-alpine
+ARG IMAGE=alpine
+ARG TAG=3.24
 ARG REGISTRY=docker.io/library
-FROM $REGISTRY/$IMAGE:$TAG
-
-ARG VERSION=1.31.5
-
-COPY --chmod=755 entrypoint.sh /entrypoint.sh
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY default.conf /etc/nginx/conf.d/default.conf
-
-RUN mkdir -p /tmp/nginx/logs /tmp/nginx/client /tmp/nginx/fastcgi /tmp/nginx/proxy /tmp/nginx/scgi /tmp/nginx/uwsgi && \
-    chgrp -R 0 /tmp/nginx /var/cache/nginx && \
-    chmod -R g+rwX /tmp/nginx /var/cache/nginx
+FROM ghcr.io/astral-sh/uv:0.12-python3.14-alpine AS builder
 
 WORKDIR /app
 
+COPY src/pyproject.toml src/uv.lock ./
+
+RUN uv sync --frozen --no-dev
+
+COPY src/. .
+
+FROM $REGISTRY/$IMAGE:$TAG
+
+RUN apk add --no-cache \
+    python3 \
+    libstdc++
+
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    mkdir -p /usr/local/bin && \
+    ln -sf /usr/bin/python3 /usr/local/bin/python3
+
+WORKDIR /app
+
+COPY --from=builder /app /app
+ENV PATH=/app/.venv/bin:$PATH
+
 RUN chgrp -R 0 /app && \
     chmod -R g+rwX /app
-
-EXPOSE 8080
-
-ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "nginx", "-g", "daemon off;" ]
-
 USER 1031
+
+EXPOSE 8000
+CMD ["fastapi", "run", "main.py", "--port", "8000", "--proxy-headers"]
