@@ -1,7 +1,7 @@
 template:
-  app: oci-custom
-  image: ghcr.io/joeckr/oci-custom
-  name: oci-custom
+  app: oci-python
+  image: ghcr.io/joeckr/oci-python
+  name: oci-python
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
@@ -28,24 +28,6 @@ template:
       operator: "Exists"
       effect: "NoSchedule"
 
-pvc:
-  name: template-pvc
-  storageAccessMode: ReadWriteOnce
-  storageSize: 1Gi
-  storageClass: ""
-
-configMap:
-  name: template-config
-  file: template.txt
-
 service:
   name: template-service
   port: 8080
-
-ingress:
-  name: template-ingress
-  host: "test.joeckr.dev"  # Put your own domain here
-  route: "false"
-  className: "nginx"
-  path: /
-  pathType: "Prefix"

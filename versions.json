@@ -1,9 +1,16 @@
 [
   {
-    "base-image": "nginx",
-    "base-tag": "1.31.5-alpine",
+    "base-image": "alpine",
+    "base-tag": "3.24",
     "latest": true,
     "lts": false,
-    "version": "1.31.5"
+    "version": "3.14"
+  },
+  {
+    "base-image": "alpine",
+    "base-tag": "3.23",
+    "latest": false,
+    "lts": false,
+    "version": "3.12"
   }
 ]

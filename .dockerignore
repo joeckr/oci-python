@@ -1,0 +1,6 @@
+.git
+.github
+chart
+**/.venv
+**/__pycache__
+**/*.py[cod]

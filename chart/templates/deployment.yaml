@@ -23,13 +23,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       automountServiceAccountToken: false
-      volumes:
-        - name: {{ .Values.pvc.name }}
-          persistentVolumeClaim:
-            claimName: {{ .Values.pvc.name }}
-        - name: {{ .Values.configMap.name }}
-          configMap:
-            name: {{ .Values.configMap.name }}
       containers:
         - name: {{ .Values.template.name }}
           image: "{{ .Values.template.image }}:{{ .Values.template.tag }}"
@@ -44,12 +37,6 @@ spec:
           env:
             - name: ENV
               value: {{ .Values.template.env | quote }}
-          volumeMounts:
-            - name: {{ .Values.pvc.name }}
-              mountPath: /tmp/data
-            - name: {{ .Values.configMap.name }}
-              mountPath: /app/{{ .Values.configMap.file }}
-              subPath: {{ .Values.configMap.file }}
           {{- with .Values.template.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

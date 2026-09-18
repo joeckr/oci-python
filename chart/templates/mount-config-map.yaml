@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.configMap.name }}
-  labels:
-    app: {{ .Values.template.app }}
-data:
-  {{ .Values.configMap.file }}: |
-    {{ .Files.Get (print "config/" .Values.configMap.file) | nindent 4 }}
