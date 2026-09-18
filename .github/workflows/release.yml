@@ -20,7 +20,7 @@ jobs:
       security-events: write
     uses: joeckr/ci-templates/.github/workflows/build-oci-custom.yml@048587658a53a6300b1262cf9b24545cbfc8940b  # v1.14.1
     with:
-      image: "oci-custom"
+      image: "python"
 
   helm:
     needs: [release]
