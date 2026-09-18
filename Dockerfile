@@ -13,9 +13,11 @@ COPY src/. .
 
 FROM $REGISTRY/$IMAGE:$TAG
 
+ARG VERSION=3.14
+
 RUN apk add --no-cache \
-    python3 \
-    libstdc++
+    python3~=${VERSION} \
+    libstdc++~=15.2
 
 RUN ln -sf /usr/bin/python3 /usr/bin/python && \
     mkdir -p /usr/local/bin && \

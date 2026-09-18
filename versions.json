@@ -5,5 +5,12 @@
     "latest": true,
     "lts": false,
     "version": "3.14"
+  },
+  {
+    "base-image": "alpine",
+    "base-tag": "3.23",
+    "latest": false,
+    "lts": false,
+    "version": "3.12"
   }
 ]
