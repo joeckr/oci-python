@@ -246,9 +246,9 @@ The following tasks are defined in [`mise.toml`](mise.toml):
 | `mise run helm-lint` | `helm lint chart/` | Lint the Helm chart. |
 | `mise run helm-template` | `helm template test chart/ > rendered.yaml` | Render Helm chart templates to `rendered.yaml`. |
 | `mise run helm-dep` | `helm dependency build chart/` | Build Helm chart dependencies. |
-| `mise run build` | `podman buildx build --platform linux/amd64 -t ghcr.io/joeckr/oci-modified:test . --load` | Build local test container image for `linux/amd64`. |
 | `mise run trivy-fs` | `trivy fs .` | Scan local repository filesystem for security vulnerabilities. |
-| `mise run trivy-image` | `trivy image ghcr.io/joeckr/oci-modified:test` | Build image and run Trivy vulnerability scan on container. |
+| `mise run build` | `podman buildx build --platform linux/amd64 -t ghcr.io/joeckr/python:test . --load` | Build local test container image for `linux/amd64`. |
+| `mise run trivy-image` | `trivy image ghcr.io/joeckr/python:test` | Build image and run Trivy vulnerability scan on container. |
 
 Checks run by `hk` include `hadolint`, `yamllint`, `actionlint`, `tombi`, `betterleaks`, and `shellcheck`.
 
