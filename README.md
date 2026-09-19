@@ -46,9 +46,9 @@ This repository provides an out-of-the-box foundation to:
 
 ### Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) & Docker Compose
+- [Podman](https://podman.io/) (or [Docker](https://docs.docker.com/get-docker/)) & Podman Compose
 - [uv](https://github.com/astral-sh/uv) (for local Python development)
-- [mise](https://mise.jdx.dev/) (optional, for task automation and tool versioning)
+- [mise](https://mise.jdx.dev/) (for task automation and tool versioning)
 
 ### 1. Local Python Development
 
@@ -66,29 +66,67 @@ uv run fastapi dev
 
 The application will be available at `http://localhost:8000`.
 
-### 2. Run with Docker Compose
+## Local Environment & Podman Setup
 
-Build and start the containerized service locally:
+To ensure containerized applications and Helm charts tested locally run cleanly when deployed to OpenShift or Talos Linux, this repository is designed to be used alongside the Podman configuration in [joeckr/dotfiles](https://github.com/joeckr/dotfiles).
 
-```bash
-# Using Docker Compose directly
-docker compose up -d --build
+The dotfiles repository provides a centralized [`containers.conf`](https://github.com/joeckr/dotfiles/blob/main/containers/containers.conf) (deployed to `~/.config/containers/containers.conf`) that configures Podman to simulate OpenShift's default **`restricted-v2` Security Context Constraints (SCC)**:
 
-# Or using mise
+| OpenShift SCC Rule | Podman Configuration | Description |
+|---|---|---|
+| **Random UID (`MustRunAsRange`)** | `userns = "auto"` | Allocates dynamic subordinate UID/GID ranges from `/etc/subuid` and `/etc/subgid`. Containers run unprivileged without mapping host root. |
+| **Drop Capabilities** | `default_capabilities = ["NET_BIND_SERVICE"]` | Drops standard root capabilities (`CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETUID`, `SETGID`, `SYS_CHROOT`, etc.) and permits only `NET_BIND_SERVICE`. |
+| **Disallow Privileged** | `privileged = false` | Disallows privileged container execution by default. |
+| **Seccomp Profile** | `seccomp_profile = "/usr/share/containers/seccomp.json"` | Enforces the runtime default seccomp profile (`RuntimeDefault`). |
+| **Namespace Isolation** | `cgroupns`, `ipcns`, `pidns`, `utsns = "private"` | Enforces private container namespaces (host namespaces are forbidden in restricted SCC). |
+
+### macOS Podman Machine Integration
+
+On macOS, the dotfiles installer script (`brew/podman.sh`) automates the machine lifecycle:
+
+1. Deploys `containers/containers.conf` to `~/.config/containers/containers.conf` on the host.
+2. Initializing `podman machine init` automatically mounts `~/.config/containers` into `/etc/containers` inside the Fedora CoreOS VM.
+3. Automatically symlinks `/etc/containers/containers.conf` to the VM user's config (`~core/.config/containers/containers.conf`) and restarts the Podman API service so all container executions immediately enforce these constraints.
+
+## Testing with Podman Compose
+
+The [`compose.yml`](compose.yml) file builds and runs the container with the security adaptations required for OpenShift and Talos Linux:
+
+```sh
+# Build and start the container
+podman compose up -d --build
+
+# Or via mise
 mise run compose
 ```
 
-Verify that the service is running:
+This verified configuration applies:
+- Non-root user execution (`USER 1031`).
+- Root group ownership (`chgrp -R 0`) and group read/write permissions (`chmod -R g+rwX`) on `/app`.
+- Production-ready FastAPI service running unprivileged on port `8000`.
 
-```bash
-curl http://localhost:8000/
-# {"message":"Hello World"}
+### Stopping Containers & Viewing Logs
+
+```sh
+# Stop compose stack
+podman compose down
+# or: mise run down
+
+# View logs
+podman compose logs -f
+# or: mise run logs
 ```
 
-To stop the container:
+### Local Helm Testing (Podman Play Kube)
 
-```bash
-docker compose down
+Test rendered Helm chart manifests directly in Podman without requiring a remote cluster:
+
+```sh
+# Render Helm template and run pods locally via podman play kube
+mise run play
+
+# Stop and tear down local pods
+mise run downplay
 ```
 
 ### 3. Build & Scan Image
@@ -167,15 +205,52 @@ helm template my-app chart/
 
 Update `chart/values.yaml` to configure replica counts, resource requests/limits, image repository, and ports as needed for your target cluster.
 
+---
+
+## OpenShift Security & Podman Local Simulation
+
+Hardened container environments such as Red Hat OpenShift enforce strict Security Context Constraints (such as `restricted` and `restricted-v2` SCCs) that prevent containers from running as root, mapping host root, or using elevated capabilities.
+
+This container image adheres to these principles:
+- Runs unprivileged under non-root user `USER 1031`.
+- Sets group 0 permissions (`chgrp -R 0 /app && chmod -R g+rwX /app`), allowing execution under arbitrary dynamic UIDs assigned by OpenShift.
+- Exposes unprivileged port `8000`.
+
+---
+
 ## Code Quality & Hooks
 
-This project uses `hk` and `mise` for pre-commit quality enforcement:
+This project uses [`mise`](https://mise.jdx.dev/) for task execution and [`hk`](https://github.com/jdx/hk) for pre-commit quality enforcement:
 
 ```bash
-mise run hk
+# Setup tools and git hooks
+mise run install
+
+# Run all linters and hook checks
+mise run hk # or mise run check
 ```
 
-Checks include `hadolint`, `yamllint`, `actionlint`, `tombi`, `betterleaks`, and `shellcheck`.
+### Available mise Tasks
+
+The following tasks are defined in [`mise.toml`](mise.toml):
+
+| Task | Command | Description |
+|---|---|---|
+| `mise run install` | `hk install --mise` | Install Git hooks (`pre-commit` and `commit-msg`). |
+| `mise run hk` *(or `check`)* | `hk check --all` | Run all checks across the repository. |
+| `mise run compose` | `podman compose up -d --build` | Start local container environment with Podman Compose. |
+| `mise run down` | `podman compose down` | Stop local Podman Compose stack. |
+| `mise run logs` | `podman compose logs -f` | Follow Podman Compose logs. |
+| `mise run play` | `podman play kube rendered.yaml` | Test Helm chart manifests locally with Podman Play Kube. |
+| `mise run downplay` | `podman play kube rendered.yaml --down` | Stop and tear down Podman Play Kube pods. |
+| `mise run helm-lint` | `helm lint chart/` | Lint the Helm chart. |
+| `mise run helm-template` | `helm template test chart/ > rendered.yaml` | Render Helm chart templates to `rendered.yaml`. |
+| `mise run helm-dep` | `helm dependency build chart/` | Build Helm chart dependencies. |
+| `mise run build` | `podman buildx build --platform linux/amd64 -t ghcr.io/joeckr/oci-modified:test . --load` | Build local test container image for `linux/amd64`. |
+| `mise run trivy-fs` | `trivy fs .` | Scan local repository filesystem for security vulnerabilities. |
+| `mise run trivy-image` | `trivy image ghcr.io/joeckr/oci-modified:test` | Build image and run Trivy vulnerability scan on container. |
+
+Checks run by `hk` include `hadolint`, `yamllint`, `actionlint`, `tombi`, `betterleaks`, and `shellcheck`.
 
 ## Support
 
