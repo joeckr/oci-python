@@ -33,7 +33,7 @@ This repository provides an out-of-the-box foundation to:
   - `uv.lock`: Deterministic dependency lockfile managed by `uv`.
 - `chart/`: Helm chart for deploying the Python service to Kubernetes or OpenShift.
 - `versions.json`: Build matrix defining target image version, base image, base tag, and release flags.
-- `docker-compose.yml`: Local multi-container orchestration for testing.
+- `compose.yml`: Local multi-container orchestration for testing.
 - `mise.toml`: Local tool definitions and task runner (`mise run compose`, `mise run build`, etc.).
 - `.github/workflows/`:
   - `release.yml`: Production release pipeline (semantic release, OCI build & push to GHCR, Helm chart push).
