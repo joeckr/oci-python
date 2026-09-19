@@ -9,7 +9,7 @@ jobs:
   release:
     permissions:
       contents: write
-    uses: joeckr/ci-templates/.github/workflows/semantic.yml@048587658a53a6300b1262cf9b24545cbfc8940b  # v1.14.1
+    uses: joeckr/ci-templates/.github/workflows/semantic.yml@578d91388a3f7862fb51c4d2e685586a4d7d1daf  # v1.20.3
 
   matrix-build:
     needs: [release]
@@ -18,7 +18,7 @@ jobs:
       contents: read
       packages: write
       security-events: write
-    uses: joeckr/ci-templates/.github/workflows/build-oci-custom.yml@048587658a53a6300b1262cf9b24545cbfc8940b  # v1.14.1
+    uses: joeckr/ci-templates/.github/workflows/build-oci-custom.yml@578d91388a3f7862fb51c4d2e685586a4d7d1daf  # v1.20.3
     with:
       image: "python"
 
@@ -28,6 +28,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: joeckr/ci-templates/.github/workflows/push-helm-ghcr.yml@048587658a53a6300b1262cf9b24545cbfc8940b  # v1.14.1
+    uses: joeckr/ci-templates/.github/workflows/push-helm-ghcr.yml@578d91388a3f7862fb51c4d2e685586a4d7d1daf  # v1.20.3
     with:
       charts-dir: 'chart'
