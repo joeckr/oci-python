@@ -77,6 +77,19 @@ run = """
 helm template test chart/ > rendered.yaml
 """
 
+[tasks.helm-install]
+description = "Install Helm chart"
+depends = ["helm-dep"]
+run = """
+helm install test chart/
+"""
+
+[tasks.helm-uninstall]
+description = "Uninstall Helm chart"
+run = """
+helm uninstall test
+"""
+
 [tasks.helm-dep]
 description = "Build Helm chart dependencies"
 run = """
