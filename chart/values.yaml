@@ -1,6 +1,6 @@
 template:
   app: oci-python
-  image: ghcr.io/joeckr/oci-python
+  image: ghcr.io/joeckr/python
   name: oci-python
   podSecurityContext:
     runAsNonRoot: true
