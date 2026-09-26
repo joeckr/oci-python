@@ -1,43 +1,43 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.template.name}}
+  name: {{ .Values.app.name }}
   labels:
-    app: {{ .Values.template.app }}
+    app: {{ .Values.app.name }}
 spec:
-  replicas: {{ .Values.template.replicaCount }}
+  replicas: {{ .Values.app.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Values.template.app }}
+      app: {{ .Values.app.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.template.app }}
+        app: {{ .Values.app.name }}
     spec:
-      {{- with .Values.template.podSecurityContext }}
+      {{- with .Values.app.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.template.tolerations }}
+      {{- with .Values.app.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       automountServiceAccountToken: false
       containers:
-        - name: {{ .Values.template.name }}
-          image: "{{ .Values.template.image }}:{{ .Values.template.tag }}"
-          imagePullPolicy: {{ .Values.template.pullPolicy }}
-          {{- with .Values.template.securityContext }}
+        - name: {{ .Values.app.name }}
+          image: "{{ .Values.app.image }}:{{ .Values.app.tag }}"
+          imagePullPolicy: {{ .Values.app.pullPolicy }}
+          {{- with .Values.app.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
-            - containerPort: {{ .Values.template.port }}
-              name: {{ .Values.template.name }}
+            - containerPort: {{ .Values.app.port }}
+              name: {{ .Values.app.name }}
           env:
             - name: ENV
-              value: {{ .Values.template.env | quote }}
-          {{- with .Values.template.resources }}
+              value: {{ .Values.app.env | quote }}
+          {{- with .Values.app.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}

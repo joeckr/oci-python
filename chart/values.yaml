@@ -1,11 +1,12 @@
-template:
-  app: oci-python
-  image: ghcr.io/joeckr/oci-python
+app:
+  image: ghcr.io/joeckr/python
   name: oci-python
+  env: "dev"
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
+    fsGroup: 1031 # take this out if deploying to OpenShift
   port: 8080
   pullPolicy: Always
   replicaCount: 1
@@ -31,3 +32,4 @@ template:
 service:
   name: template-service
   port: 8080
+  type: NodePort
