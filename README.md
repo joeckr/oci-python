@@ -1,14 +1,14 @@
 # OCI Python
 
-This repository serves as a lightweight, secure-by-default Python container image starter template. Built on Alpine Linux and packaged with Astral's [`uv`](https://github.com/astral-sh/uv) package manager, it provides an enterprise-ready runtime environment for Python and FastAPI applications. It is pre-configured for compliance with **OpenShift** (arbitrary UID support) and **Talos Linux**, automated multi-architecture CI/CD workflows, and an accompanying **Helm chart**.
+This repository serves as a lightweight, secure-by-default Python container image starter template. Built on Alpine Linux and packaged with Astral's [`uv`](https://github.com/astral-sh/uv) package manager, it provides an enterprise-ready runtime environment for Python and FastAPI applications. It is pre-configured for compliance with modern Kubernetes security standards (restricted Pod Security Standards and arbitrary non-root UID support), automated multi-architecture CI/CD workflows, and an accompanying **Helm chart**.
 
 ## Purpose
 
-Running containerized Python workloads in security-hardened Kubernetes environments like OpenShift (enforcing strict Security Context Constraints) and Talos Linux requires adhering to strict security defaults. Containers must run without root privileges, avoid privilege escalation, and accommodate arbitrary user IDs while maintaining minimal image footprints.
+Running containerized Python workloads in security-hardened Kubernetes environments (enforcing restricted Pod Security Standards and rootless runtimes) requires adhering to strict security defaults. Containers must run without root privileges, avoid privilege escalation, and accommodate arbitrary user IDs while maintaining minimal image footprints.
 
 This repository provides an out-of-the-box foundation to:
 - **Minimal Python Runtime**: Multi-stage Docker build separating the build toolchain (`uv`) from the production runtime, yielding a lean Alpine image (~55 MB) free of development compilers.
-- **Enterprise Security Defaults**: Runs as non-root (`USER 1031`), supports OpenShift arbitrary UIDs (`chgrp -R 0 /app` and `chmod -R g+rwX /app`), and satisfies restricted Pod Security Standards.
+- **Enterprise Security Defaults**: Runs as non-root (`USER 1031`), supports arbitrary dynamic UIDs (`chgrp -R 0 /app` and `chmod -R g+rwX /app`), and satisfies restricted Pod Security Standards.
 - **Modern Python Packaging**: Uses Astral `uv` for lightning-fast lockfile resolution, dependency caching, and virtual environment management via `pyproject.toml` and `uv.lock`.
 - **FastAPI Starter**: Includes a production-ready FastAPI boilerplate application in `src/` configured with `--proxy-headers` for reverse proxy compatibility.
 - **Automated CI/CD**: Build multi-platform images (amd64, arm64), run vulnerability scans (Trivy), generate Software Bills of Materials (SBOM), and publish to GitHub Container Registry (GHCR) using reusable CI templates.
@@ -19,7 +19,7 @@ This repository provides an out-of-the-box foundation to:
 
 - **Fast Multi-Stage Builds**: Pre-builds dependencies in a `uv`-powered builder stage and copies the isolated virtual environment into a lightweight Alpine runtime.
 - **Optimized Layer Caching**: Separate lockfile copying and dependency synchronization ensures dependency layers remain cached when application code changes.
-- **OpenShift & Kubernetes Hardened**: Configured with OpenShift group 0 permissions and non-root execution (`USER 1031`).
+- **Rootless & Hardened Image Design**: Configured with group 0 permissions and non-root execution (`USER 1031`).
 - **Helm Chart Included**: Standardized Kubernetes deployment templates in `chart/` for rapid cluster onboarding.
 - **Matrix CI Pipelines**: Integrates with `joeckr/ci-templates` workflows (`build-oci-custom.yml`, `push-helm-ghcr.yml`, `semantic.yml`) for semantic versioning, Trivy vulnerability scanning, and GHCR publishing.
 - **Tooling & Task Management**: Includes `mise.toml` tasks for building, running, and scanning, as well as `hk` pre-commit hooks for code quality.
@@ -31,7 +31,7 @@ This repository provides an out-of-the-box foundation to:
   - `main.py`: FastAPI application entrypoint.
   - `pyproject.toml`: Python project metadata and dependencies.
   - `uv.lock`: Deterministic dependency lockfile managed by `uv`.
-- `chart/`: Helm chart for deploying the Python service to Kubernetes or OpenShift.
+- `chart/`: Helm chart for deploying the Python service to Kubernetes.
 - `versions.json`: Build matrix defining target image version, base image, base tag, and release flags.
 - `compose.yml`: Local multi-container orchestration for testing.
 - `mise.toml`: Local tool definitions and task runner (`mise run compose`, `mise run build`, etc.).
@@ -66,27 +66,21 @@ uv run fastapi dev
 
 The application will be available at `http://localhost:8000`.
 
-## Security & Compliance Architecture
+## Security & Hardened Image Architecture
 
-Both OpenShift and Talos Linux prioritize workload security and least privilege, but they enforce and evaluate constraints through different mechanisms. This repository is architected to satisfy both environments without code changes.
+Modern hardened Kubernetes environments prioritize workload security and least privilege by enforcing strict runtime constraints. This repository is architected to produce rootless, hardened container images that run out-of-the-box under restricted security standards without requiring root privileges.
 
-### OpenShift Compliance (`restricted-v2` SCC)
+### Hardened Container Standards (Kubernetes PSS `restricted`)
 
-OpenShift uses **Security Context Constraints (SCC)** to control pod permissions. Under the default `restricted-v2` SCC:
-- **Arbitrary Dynamic UIDs**: OpenShift assigns a random UID from a dedicated per-namespace range (e.g., `1000670000`). Containers cannot assume a fixed UID like `1000`.
-- **Root Group (GID 0)**: Files and directories required at runtime must be owned by group 0 (`chgrp -R 0`) with group read/write permissions (`chmod -R g+rwX`) so the dynamically assigned UID can access them.
-- **Dropped Capabilities**: Drops standard root capabilities (`CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETUID`, `SETGID`, `SYS_CHROOT`, etc.) and permits only unprivileged operations (and `NET_BIND_SERVICE` when needed).
-- **Unprivileged Ports**: Containers must listen on non-privileged ports (> 1024), such as port `8000` or `8080`.
-
-### Talos Linux Compliance (Kubernetes PSS `restricted`)
-
-Talos Linux is an immutable, minimal, secure-by-default Kubernetes operating system with no SSH, no interactive shell, and an immutable root filesystem. In Talos clusters:
-- **Pod Security Standards (PSS)**: Workload namespaces enforce the Kubernetes **Pod Security Admission (PSA)** `restricted` profile.
-- **Must Run As Non-Root**: The pod specification must set `securityContext.runAsNonRoot: true`. Containers cannot execute as UID 0.
-- **Drop All Capabilities**: The container specification must explicitly drop all Linux capabilities (`capabilities: drop: ["ALL"]`).
-- **Disallow Privilege Escalation**: Must set `securityContext.allowPrivilegeEscalation: false` to prevent child processes from acquiring more privileges than the parent.
-- **Seccomp Profile**: Pods must enforce `seccompProfile: { type: RuntimeDefault }`.
-- **Credential Protection**: Best practice sets `automountServiceAccountToken: false` to avoid leaking Kubernetes API tokens to application containers unless explicitly needed.
+Under the Kubernetes **Pod Security Admission (PSA)** `restricted` profile and modern hardened container runtimes:
+- **Must Run As Non-Root**: The pod specification sets `securityContext.runAsNonRoot: true` with a dedicated non-root UID (`USER 1031` or dynamic non-root UID). Containers cannot execute as UID 0.
+- **Arbitrary Dynamic UIDs**: Workload environments may assign dynamic arbitrary non-root UIDs. Files and directories required at runtime are configured with group 0 permissions (`chgrp -R 0` and `chmod -R g+rwX`) so any non-root UID can execute and access required assets.
+- **Drop All Capabilities**: The container specification explicitly drops all Linux capabilities (`capabilities.drop: ["ALL"]`).
+- **Disallow Privilege Escalation**: Pods enforce `securityContext.allowPrivilegeEscalation: false` to prevent child processes from acquiring additional privileges.
+- **RuntimeDefault Seccomp**: Workloads enforce `seccompProfile: { type: RuntimeDefault }` to restrict syscalls to safe defaults.
+- **Credential Protection**: Hardened with `automountServiceAccountToken: false` to avoid leaking Kubernetes API tokens to application containers unless explicitly needed.
+- **Unprivileged Ports**: Containers listen on non-privileged ports (> 1024).
+- **Standard Ingress & Storage**: Uses standard Kubernetes `networking.k8s.io/v1` `Ingress` and standard CSI PersistentVolumeClaims.
 
 ### Rootless Build Environment Compliance
 
@@ -100,24 +94,23 @@ This repository's `Dockerfile` is engineered for complete rootless build support
 
 ### Compliance Matrix
 
-| Security Dimension | OpenShift (`restricted-v2` SCC) | Talos Linux (Kubernetes PSS `restricted`) | Implementation in This Repo |
-|---|---|---|---|
-| **Build Execution** | Rootless builder compatible | Rootless builder compatible | Builds unprivileged via rootless Podman/Buildah (`mise run build`) |
-| **User ID** | Dynamic arbitrary UID (`MustRunAsRange`) | Non-root UID (`runAsNonRoot: true`) | `USER 1031` in Dockerfile + `runAsNonRoot: true` in Helm |
-| **Group Permissions** | Requires GID 0 (`root`) with `g+rwX` | Compatible with GID 0 / unprivileged groups | `chgrp -R 0 /app` & `chmod -R g+rwX /app` on runtime paths |
-| **Capabilities** | Drops root caps; allows `NET_BIND_SERVICE` | Must drop `ALL` capabilities | `capabilities.drop: ["ALL"]` in Helm chart |
-| **Privilege Escalation** | Prohibited | `allowPrivilegeEscalation: false` | Configured in Helm `securityContext` |
-| **Seccomp Profile** | `RuntimeDefault` | `RuntimeDefault` or `Localhost` | `seccompProfile: { type: RuntimeDefault }` |
-| **Service Account Token** | Optional | Recommended disabled | Hardened in pod configuration |
-| **Port Binding** | Unprivileged (> 1024) | Unprivileged (> 1024) | Listens on port `8000` (Compose) / `8080` (Helm) |
-
+| Security Dimension | Restricted Standard Requirement | Implementation in This Repo |
+|---|---|---|
+| **Build Execution** | Unprivileged / rootless builder compatible | Builds unprivileged via rootless Podman/Buildah (`mise run build`) |
+| **User ID** | Non-root UID (`runAsNonRoot: true`) / dynamic UID | `USER 1031` in Dockerfile + `runAsNonRoot: true` in Helm |
+| **Group Permissions** | GID 0 (`root` group) with `g+rwX` | `chgrp -R 0 /app` & `chmod -R g+rwX /app` on runtime paths |
+| **Capabilities** | Must drop `ALL` capabilities | `capabilities.drop: ["ALL"]` in Helm chart |
+| **Privilege Escalation** | Prohibited (`allowPrivilegeEscalation: false`) | Configured in Helm `securityContext` |
+| **Seccomp Profile** | `RuntimeDefault` or `Localhost` | `seccompProfile: { type: RuntimeDefault }` |
+| **Service Account Token** | Disabled unless required | Hardened in pod configuration |
+| **Port Binding** | Unprivileged (> 1024) | Listens on port `8000` (Compose) / `8080` (Helm) |
 ---
 
 ## Local Environment & Podman Setup
 
-To ensure containerized applications and Helm charts tested locally run cleanly when deployed to OpenShift or Talos Linux, this repository is designed to be used alongside the Podman configuration in [joeckr/dotfiles](https://github.com/joeckr/dotfiles).
+To ensure containerized applications and Helm charts tested locally run cleanly when deployed to hardened Kubernetes environments, this repository is designed to be used alongside the Podman configuration in [joeckr/dotfiles](https://github.com/joeckr/dotfiles).
 
-The dotfiles repository provides a centralized [`containers.conf`](https://github.com/joeckr/dotfiles/blob/main/containers/containers.conf) (deployed to `~/.config/containers/containers.conf`) that configures Podman to simulate OpenShift and Talos Linux runtime restrictions:
+The dotfiles repository provides a centralized [`containers.conf`](https://github.com/joeckr/dotfiles/blob/main/containers/containers.conf) (deployed to `~/.config/containers/containers.conf`) that configures Podman to enforce rootless and hardened container runtime restrictions in testing:
 
 | Security Rule | Podman Configuration | Description |
 |---|---|---|
@@ -143,7 +136,7 @@ This repository defines a 3-tier testing process to validate container security,
 
 ```
 ┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐
-│ Tier 1: Local Test      │ ──> │ Tier 2: Podman Play     │ ──> │ Tier 3: Talos Cluster   │
+│ Tier 1: Local Test      │ ──> │ Tier 2: Podman Play     │ ──> │ Tier 3: K8s Cluster     │
 │ Verify non-root & app   │     │ Validate K8s manifests  │     │ Live Helm verification  │
 │ (compose.yml)           │     │ (podman play kube)      │     │ (helm install)          │
 └─────────────────────────┘     └─────────────────────────┘     └─────────────────────────┘
@@ -151,7 +144,7 @@ This repository defines a 3-tier testing process to validate container security,
 
 ### Tier 1: Local Container Validation (`compose.yml`)
 
-The [`compose.yml`](compose.yml) configuration builds and runs the customized `Dockerfile` containing the adaptations required for OpenShift and Talos Linux:
+The [`compose.yml`](compose.yml) configuration builds and runs the customized `Dockerfile` containing the adaptations required for rootless, hardened container execution:
 
 ```sh
 # Build and start the container
@@ -226,19 +219,18 @@ mise run play-d
 
 ---
 
-### Tier 3: Cluster Deployment & Testing on Talos Linux (`mise run helm-i`)
+### Tier 3: Cluster Deployment & Testing on Kubernetes (`mise run helm-i`)
 
-The final phase validates the workload on a live **Talos Linux** Kubernetes cluster. This tests real-world Pod Security Admission (PSA) enforcement, network policies, and service routing.
+The final phase validates the workload on a live Kubernetes cluster. This tests real-world Pod Security Admission (PSA) enforcement, network policies, and service routing.
 
 #### 1. Cluster Prerequisites & Configuration
 
-Ensure your `kubectl` context points to your Talos cluster:
+Ensure your `kubectl` context points to your Kubernetes cluster:
 ```sh
 kubectl config current-context
-# Example: admin@my-talos-cluster
 ```
 
-Ensure the container image is accessible to your Talos nodes (e.g., built and pushed to GitHub Container Registry `ghcr.io` or your local registry):
+Ensure the container image is accessible to your cluster nodes (e.g., built and pushed to GitHub Container Registry `ghcr.io` or your local registry):
 ```sh
 # Build image locally with target tag
 mise run build
@@ -255,7 +247,7 @@ mise run helm-t
 cat rendered.yaml
 ```
 
-#### 3. Deploying to the Talos Cluster
+#### 3. Deploying to the Cluster
 
 Install the Helm chart release:
 ```sh
@@ -263,9 +255,9 @@ mise run helm-i
 # or: helm install test chart/
 ```
 
-#### 4. Verifying Talos PSS Compliance & Health
+#### 4. Verifying PSS Compliance & Health
 
-Check the pod status and verify that Talos Linux Pod Security Admission (PSA) allowed the pod to run:
+Check the pod status and verify that Kubernetes Pod Security Admission (PSA) allowed the pod to run:
 
 ```sh
 # Check pod deployment status
@@ -290,7 +282,7 @@ kubectl port-forward svc/template-service 8080:8080
 curl http://localhost:8080
 ```
 
-#### 5. Uninstalling from the Talos Cluster
+#### 5. Uninstalling from the Cluster
 
 When testing is complete, clean up the release:
 ```sh
@@ -320,7 +312,7 @@ mise run trivy-fs
 The `Dockerfile` employs a multi-stage build pattern:
 
 1. **Builder stage**: Uses `ghcr.io/astral-sh/uv` to install dependencies into `/app/.venv` using `uv sync --frozen --no-dev`.
-2. **Runtime stage**: Starts from a clean Alpine image, installs runtime `python3` and `libstdc++`, sets up required symlinks, sets OpenShift group permissions, and switches to non-root `USER 1031`.
+2. **Runtime stage**: Starts from a clean Alpine image, installs runtime `python3` and `libstdc++`, sets up required symlinks, sets group 0 permissions, and switches to non-root `USER 1031`.
 
 ```dockerfile
 ARG IMAGE=alpine
@@ -368,7 +360,7 @@ Update `versions.json` to define the target base image and version tags:
 
 ### 6. Run the Test Suite
 
-Validate changes through the 3-tier process: `mise run compose` (local container validation), `mise run play` (manifest test), and `mise run helm-i` (Talos cluster test).
+Validate changes through the 3-tier process: `mise run compose` (local container validation), `mise run play` (manifest test), and `mise run helm-i` (Kubernetes cluster test).
 
 ## Code Quality & Hooks
 
