@@ -10,18 +10,18 @@ jobs:
   betterleaks:
     permissions:
       contents: read
-    uses: joeckr/ci-templates/.github/workflows/betterleaks.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/betterleaks.yml@697db8faa5f8d3fa5ec15ef35674aa1e855d3a33  # v1.23.1
   sbom:
     permissions:
       contents: read
-    uses: joeckr/ci-templates/.github/workflows/sbom.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/sbom.yml@697db8faa5f8d3fa5ec15ef35674aa1e855d3a33  # v1.23.1
   trivy:
     permissions:
       contents: read
       security-events: write  # required to upload SARIF results to GitHub Advanced Security
-    uses: joeckr/ci-templates/.github/workflows/trivy-fs.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/trivy-fs.yml@697db8faa5f8d3fa5ec15ef35674aa1e855d3a33  # v1.23.1
   zizmor:
     permissions:
       contents: read
       security-events: write  # required to upload SARIF results to GitHub Advanced Security
-    uses: joeckr/ci-templates/.github/workflows/zizmor.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/zizmor.yml@697db8faa5f8d3fa5ec15ef35674aa1e855d3a33  # v1.23.1
