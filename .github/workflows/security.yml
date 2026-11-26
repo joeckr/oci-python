@@ -6,22 +6,26 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   betterleaks:
     permissions:
       contents: read
-    uses: joeckr/ci-templates/.github/workflows/betterleaks.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/betterleaks.yml@1c6283577ea8eabcda150cb4f2a9749b3c610b1d  # v1.24.1
   sbom:
     permissions:
       contents: read
-    uses: joeckr/ci-templates/.github/workflows/sbom.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/sbom.yml@1c6283577ea8eabcda150cb4f2a9749b3c610b1d  # v1.24.1
   trivy:
     permissions:
       contents: read
       security-events: write  # required to upload SARIF results to GitHub Advanced Security
-    uses: joeckr/ci-templates/.github/workflows/trivy-fs.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/trivy-fs.yml@1c6283577ea8eabcda150cb4f2a9749b3c610b1d  # v1.24.1
   zizmor:
     permissions:
       contents: read
       security-events: write  # required to upload SARIF results to GitHub Advanced Security
-    uses: joeckr/ci-templates/.github/workflows/zizmor.yml@db877801751041f06adcca7e4b9b3a1973ac563e  # v1.21.0
+    uses: joeckr/ci-templates/.github/workflows/zizmor.yml@1c6283577ea8eabcda150cb4f2a9749b3c610b1d  # v1.24.1
