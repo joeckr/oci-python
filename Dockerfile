@@ -1,6 +1,3 @@
-ARG IMAGE=alpine
-ARG TAG=3.24
-ARG REGISTRY=docker.io/library
 FROM ghcr.io/astral-sh/uv:0.12-python3.14-alpine AS builder
 
 WORKDIR /app
@@ -11,7 +8,7 @@ RUN uv sync --frozen --no-dev
 
 COPY src/. .
 
-FROM $REGISTRY/$IMAGE:$TAG
+FROM docker.io/library/alpine:3.24
 
 ARG VERSION=3.14
 

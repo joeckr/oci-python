@@ -25,7 +25,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: {{ .Values.app.name }}
-          image: "{{ .Values.app.image }}:{{ .Values.app.tag }}"
+          image: "{{ .Values.app.image }}:{{ .Values.app.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.app.pullPolicy }}
           {{- with .Values.app.securityContext }}
           securityContext:
