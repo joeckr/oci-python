@@ -8,7 +8,7 @@ app:
       type: RuntimeDefault
     fsGroup: 1031
   port: 8080
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   replicaCount: 1
   resources:
     limits:
