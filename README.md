@@ -21,7 +21,7 @@ This repository provides an out-of-the-box foundation to:
 - **Optimized Layer Caching**: Separate lockfile copying and dependency synchronization ensures dependency layers remain cached when application code changes.
 - **Rootless & Hardened Image Design**: Configured with group 0 permissions and non-root execution (`USER 1031`).
 - **Helm Chart Included**: Standardized Kubernetes deployment templates in `chart/` for rapid cluster onboarding.
-- **Matrix CI Pipelines**: Integrates with `joeckr/ci-templates` workflows (`build-oci-custom.yml`, `push-helm-ghcr.yml`, `semantic.yml`) for semantic versioning, Trivy vulnerability scanning, and GHCR publishing.
+- **Automated CI Pipelines**: Integrates with `joeckr/ci-templates` workflows (`build-oci.yml`, `push-helm-ghcr.yml`, `semantic.yml`) for semantic versioning, container image builds, and GHCR publishing.
 - **Tooling & Task Management**: Includes `mise.toml` tasks for building, running, and scanning, as well as `hk` pre-commit hooks for code quality.
 
 ## Repository Structure
@@ -32,7 +32,6 @@ This repository provides an out-of-the-box foundation to:
   - `pyproject.toml`: Python project metadata and dependencies.
   - `uv.lock`: Deterministic dependency lockfile managed by `uv`.
 - `chart/`: Helm chart for deploying the Python service to Kubernetes.
-- `versions.json`: Build matrix defining target image version, base image, base tag, and release flags.
 - `compose.yml`: Local multi-container orchestration for testing.
 - `mise.toml`: Local tool definitions and task runner (`mise run compose`, `mise run build`, etc.).
 - `.github/workflows/`:
@@ -342,23 +341,7 @@ EXPOSE 8000
 CMD ["fastapi", "run", "main.py", "--port", "8000", "--proxy-headers"]
 ```
 
-### 5. Configure Build Matrix
-
-Update `versions.json` to define the target base image and version tags:
-
-```json
-[
-  {
-    "version": "0.1.0",
-    "base-image": "alpine",
-    "base-tag": "3.24",
-    "latest": true,
-    "lts": false
-  }
-]
-```
-
-### 6. Run the Test Suite
+### 5. Run the Test Suite
 
 Validate changes through the 3-tier process: `mise run compose` (local container validation), `mise run play` (manifest test), and `mise run helm-i` (Kubernetes cluster test).
 

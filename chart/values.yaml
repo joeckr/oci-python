@@ -20,7 +20,8 @@ app:
     capabilities:
       drop:
         - ALL
-  tag: latest
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
   tolerations:
     - key: "node-role.kubernetes.io/control-plane"
       operator: "Exists"
