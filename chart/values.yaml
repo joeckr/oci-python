@@ -2,6 +2,7 @@ app:
   image: ghcr.io/joeckr/python
   name: oci-python
   env: "dev"
+  podAnnotations: {}
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
@@ -34,3 +35,10 @@ service:
   name: template-service
   port: 8080
   type: NodePort
+
+secret:
+  # Set create: true with data for chart-managed secrets, or provide existingSecret
+  # when managing secrets externally (e.g. External Secrets Operator).
+  create: false
+  existingSecret: ""
+  data: {}
